@@ -1,11 +1,11 @@
 import os
 import logging
-from typing import Optional
+from typing import Optional, Callable, Any
 from contextlib import contextmanager
 
 from fastapi import FastAPI
 from opentelemetry import trace
-from opentelemetry.trace import Status, StatusCode, Span
+from opentelemetry.trace import Span, Status, StatusCode
 from opentelemetry.sdk.resources import Resource, SERVICE_NAME
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -14,8 +14,13 @@ from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["init_telemetry", "instrument_app", "get_tracer", "start_trace_span", "trace_function"]
-
+__all__ = [
+    "init_telemetry",
+    "instrument_app",
+    "get_tracer",
+    "start_trace_span",
+    "trace_function"
+]
 
 def init_telemetry(service_name: str):
     """
@@ -56,29 +61,36 @@ def get_tracer(name: Optional[str] = None):
 
 
 @contextmanager
-def start_trace_span(name: str, attrs: dict = None) -> Span:
+def start_trace_span(name: str, attrs: Optional[dict] = None) -> Span:
     """
     Context manager para crear spans con atributos opcionales.
+    Maneja también errores y los registra.
     """
     tracer = get_tracer()
     with tracer.start_as_current_span(name) as span:
         if attrs:
             for k, v in attrs.items():
                 span.set_attribute(k, v)
-        yield span
+        try:
+            yield span
+        except Exception as e:
+            logger.exception(f"❌ Error en span '{name}': {e}")
+            span.record_exception(e)
+            span.set_status(Status(StatusCode.ERROR, str(e)))
+            raise
 
 
-def trace_function(name: str):
+def trace_function(name: str) -> Callable:
     """
     Decorador para trazar funciones automáticamente.
     """
-    def decorator(func):
-        def wrapper(*args, **kwargs):
+    def decorator(func: Callable) -> Callable:
+        def wrapper(*args, **kwargs) -> Any:
             with start_trace_span(name) as span:
                 try:
                     return func(*args, **kwargs)
                 except Exception as e:
-                    logger.error(f"❌ Error en {name}: {e}")
+                    logger.exception(f"❌ Error en función '{name}': {e}")
                     span.record_exception(e)
                     span.set_status(Status(StatusCode.ERROR, str(e)))
                     raise
