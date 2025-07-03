@@ -1,5 +1,5 @@
 [project]
-name = "wisey-telemetry"
+name = "wisey_telemetry"
 version = "0.1.0"
 description = "Reusable OpenTelemetry setup for Wewise microservices"
 readme = "README.md"
