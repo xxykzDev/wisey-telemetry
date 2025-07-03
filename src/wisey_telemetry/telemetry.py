@@ -1,28 +1,30 @@
 import os
+import logging
+from typing import Optional
+from contextlib import contextmanager
+
 from fastapi import FastAPI
 from opentelemetry import trace
+from opentelemetry.trace import Status, StatusCode, Span
 from opentelemetry.sdk.resources import Resource, SERVICE_NAME
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.exporter.jaeger.thrift import JaegerExporter
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
-__all__ = ["init_telemetry", "instrument_app"]
+logger = logging.getLogger(__name__)
+
+__all__ = ["init_telemetry", "instrument_app", "get_tracer", "start_trace_span", "trace_function"]
 
 
 def init_telemetry(service_name: str):
     """
     Inicializa el TracerProvider con el exportador Jaeger.
-
-    :param service_name: Nombre del servicio para distinguir en el trace backend.
     """
     jaeger_host = os.getenv("JAEGER_HOST", "localhost")
     jaeger_port = int(os.getenv("JAEGER_PORT", "6831"))
 
-    # Recurso con nombre del servicio
-    resource = Resource(attributes={
-        SERVICE_NAME: service_name
-    })
+    resource = Resource(attributes={SERVICE_NAME: service_name})
 
     provider = TracerProvider(resource=resource)
     trace.set_tracer_provider(provider)
@@ -35,10 +37,50 @@ def init_telemetry(service_name: str):
     span_processor = BatchSpanProcessor(jaeger_exporter)
     provider.add_span_processor(span_processor)
 
+    logger.info(f"✅ Telemetría inicializada para: {service_name}")
+
 
 def instrument_app(app: FastAPI):
     """
     Instrumenta una aplicación FastAPI automáticamente.
-    Si no usás FastAPI, no necesitás llamar esto.
     """
     FastAPIInstrumentor.instrument_app(app)
+    logger.info("🚀 FastAPI instrumentada con OpenTelemetry")
+
+
+def get_tracer(name: Optional[str] = None):
+    """
+    Obtiene un tracer global para uso general.
+    """
+    return trace.get_tracer(name or "wisey-tracer")
+
+
+@contextmanager
+def start_trace_span(name: str, attrs: dict = None) -> Span:
+    """
+    Context manager para crear spans con atributos opcionales.
+    """
+    tracer = get_tracer()
+    with tracer.start_as_current_span(name) as span:
+        if attrs:
+            for k, v in attrs.items():
+                span.set_attribute(k, v)
+        yield span
+
+
+def trace_function(name: str):
+    """
+    Decorador para trazar funciones automáticamente.
+    """
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            with start_trace_span(name) as span:
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    logger.error(f"❌ Error en {name}: {e}")
+                    span.record_exception(e)
+                    span.set_status(Status(StatusCode.ERROR, str(e)))
+                    raise
+        return wrapper
+    return decorator
