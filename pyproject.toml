@@ -14,5 +14,5 @@ dependencies = [
 ]
 
 [tool.setuptools]
-packages = ["wewise_telemetry"]
+packages = ["wisey_telemetry"]
 package-dir = {"" = "src"}
