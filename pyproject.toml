@@ -13,5 +13,6 @@ dependencies = [
     "opentelemetry-instrumentation-fastapi"
 ]
 
-[tool.setuptools.packages.find]
-where = ["src"]
+[tool.setuptools]
+packages = ["wewise_telemetry"]
+package-dir = {"" = "src"}
