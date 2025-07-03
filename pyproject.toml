@@ -1,5 +1,5 @@
 [project]
-name = "wisey_telemetry"
+name = "wisey-telemetry"  # ✅ guión, no guión bajo
 version = "0.1.0"
 description = "Reusable OpenTelemetry setup for Wewise microservices"
 readme = "README.md"
@@ -14,5 +14,5 @@ dependencies = [
 ]
 
 [tool.setuptools]
-packages = ["wisey_telemetry"]
+packages = ["wisey_telemetry"]  # ✅ guión bajo acá, porque es el nombre del módulo Python
 package-dir = {"" = "src"}
