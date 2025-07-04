@@ -3,7 +3,7 @@ name = "wisey-telemetry"
 version = "0.1.0"
 description = "Reusable OpenTelemetry setup for Wewise microservices"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 
 dependencies = [
     "fastapi",
