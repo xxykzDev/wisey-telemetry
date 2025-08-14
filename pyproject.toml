@@ -10,7 +10,9 @@ dependencies = [
     "opentelemetry-api",
     "opentelemetry-sdk",
     "opentelemetry-exporter-jaeger-thrift",
-    "opentelemetry-instrumentation-fastapi"
+    "opentelemetry-instrumentation-fastapi",
+    "opentelemetry-exporter-prometheus",
+    "prometheus-client"
 ]
 
 [tool.setuptools]
