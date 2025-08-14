@@ -14,6 +14,12 @@ from .kafka_metrics import (
     get_kafka_metrics
 )
 
+from .job_metrics import (
+    JobMetrics,
+    init_job_metrics,
+    get_job_metrics
+)
+
 __all__ = [
     "init_telemetry",
     "instrument_app",
@@ -22,5 +28,8 @@ __all__ = [
     "trace_function",
     "KafkaMetrics",
     "init_kafka_metrics",
-    "get_kafka_metrics"
+    "get_kafka_metrics",
+    "JobMetrics",
+    "init_job_metrics",
+    "get_job_metrics"
 ]
